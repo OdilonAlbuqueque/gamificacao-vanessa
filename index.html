@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Controle de Gamificação – Vanessa Amorim</title>
+  <meta name="description" content="Sistema de gamificação de colaboradores e clientes da Clínica Vanessa Amorim" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <!-- TOAST NOTIFICATIONS -->
+  <div id="toast-container"></div>
+
+  <!-- AWARD ALERT MODAL -->
+  <div id="award-alert-modal" class="modal-overlay hidden">
+    <div class="modal award-alert-modal">
+      <div class="award-alert-icon">🏆</div>
+      <h2 id="award-alert-title">Parabéns!</h2>
+      <p id="award-alert-body"></p>
+      <button class="btn btn-gold" onclick="closeAwardAlert()">Incrível! Fechar</button>
+    </div>
+  </div>
+
+  <!-- NO-CONNECTION OVERLAY (shown only when no credentials) -->
+  <div id="no-conn-overlay" class="hidden" style="
+    position:fixed;inset:0;z-index:9999;
+    background:var(--black-1,#0a0a0a);
+    display:flex;align-items:center;justify-content:center;
+  ">
+    <div style="text-align:center;max-width:440px;padding:40px 32px">
+      <div style="font-size:3rem;margin-bottom:16px">⚙️</div>
+      <h2 style="color:var(--gold,#D4AF37);margin-bottom:10px">Conecte ao banco de dados</h2>
+      <p style="color:#888;margin-bottom:24px;font-size:.9rem">
+        Para usar o sistema, configure a conexão com o Supabase uma única vez.
+      </p>
+      <button class="btn btn-gold btn-lg" onclick="navigateTo('configuracoes');document.getElementById('no-conn-overlay').classList.add('hidden')">
+        ⭐ Ir para Configurações
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== LOGIN OVERLAY ===== -->
+  <div id="login-overlay" style="
+    position:fixed;inset:0;z-index:9990;
+    background:radial-gradient(ellipse at 25% 30%, #1a1400 0%, #0a0a0a 65%);
+    display:flex;align-items:center;justify-content:center;padding:20px;
+    transition:opacity .3s ease;
+  ">
+    <div style="width:100%;max-width:400px">
+      <!-- Brand -->
+      <div style="text-align:center;margin-bottom:32px">
+        <div id="login-logo-area" style="min-height:60px;display:flex;align-items:center;justify-content:center;margin-bottom:12px"></div>
+        <div id="login-clinic-name" style="font-size:1.5rem;font-weight:800;color:#D4AF37;letter-spacing:.03em">Vanessa Amorim</div>
+        <div style="font-size:.78rem;color:#605040;margin-top:4px">Sistema de Gamificação</div>
+      </div>
+      <!-- Card -->
+      <div style="
+        background:#161616;border:1px solid rgba(212,175,55,0.35);border-radius:20px;
+        padding:36px 32px;box-shadow:0 8px 40px rgba(0,0,0,0.6),0 0 0 1px rgba(212,175,55,0.05);
+      ">
+        <h2 style="font-size:1.1rem;font-weight:700;color:#F5F0E8;margin-bottom:4px">Acesso ao Sistema</h2>
+        <p style="font-size:.8rem;color:#605040;margin-bottom:24px">Entre com seu usuário e senha</p>
+        <div class="form-group">
+          <label>Usuário</label>
+          <input type="text" id="login-username" placeholder="Digite seu usuário" autocomplete="username" />
+        </div>
+        <div class="form-group">
+          <label>Senha</label>
+          <input type="password" id="login-password" placeholder="Digite sua senha" autocomplete="current-password" />
+        </div>
+        <div id="login-error" style="color:#E07070;font-size:.82rem;margin-bottom:12px;min-height:18px"></div>
+        <button class="btn btn-gold btn-lg" id="login-btn" onclick="doLogin()">Entrar</button>
+      </div>
+      <p style="text-align:center;font-size:.72rem;color:#3a3020;margin-top:20px">Clínica Vanessa Amorim &copy; 2025</p>
+    </div>
+  </div>
+
+  <!-- ===== CHANGE PASSWORD MODAL (first login) ===== -->
+  <div id="change-pw-modal" style="
+    position:fixed;inset:0;z-index:9995;
+    background:rgba(0,0,0,0.88);backdrop-filter:blur(6px);
+    display:none;align-items:center;justify-content:center;padding:20px;
+  ">
+    <div style="
+      background:#161616;border:1px solid rgba(212,175,55,0.4);border-radius:20px;
+      padding:36px 32px;max-width:400px;width:100%;
+      box-shadow:0 8px 40px rgba(0,0,0,0.7);
+    ">
+      <div style="font-size:2rem;margin-bottom:12px">🔐</div>
+      <h2 style="font-size:1.1rem;font-weight:700;color:#D4AF37;margin-bottom:6px">Defina sua Nova Senha</h2>
+      <p style="color:#A09080;font-size:.83rem;margin-bottom:24px;line-height:1.5">
+        Por segurança, você precisa criar uma senha pessoal antes de continuar.
+      </p>
+      <div class="form-group">
+        <label>Nova Senha <span style="color:#605040">(mín. 6 caracteres)</span></label>
+        <input type="password" id="new-pw-1" placeholder="Digite sua nova senha" autocomplete="new-password" />
+      </div>
+      <div class="form-group">
+        <label>Confirmar Nova Senha</label>
+        <input type="password" id="new-pw-2" placeholder="Repita a nova senha" autocomplete="new-password" />
+      </div>
+      <div id="new-pw-error" style="color:#E07070;font-size:.82rem;margin-bottom:12px;min-height:18px"></div>
+      <button class="btn btn-gold btn-lg" id="new-pw-btn" onclick="doChangePassword()">Salvar Nova Senha</button>
+    </div>
+  </div>
+
+  <!-- MAIN APP (hidden until authenticated) -->
+  <div id="app" class="app" style="visibility:hidden">
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon" id="sidebar-brand-icon">✦</div>
+        <div class="brand-text">
+          <span class="brand-name">Vanessa Amorim</span>
+          <span class="brand-sub">Gamificação</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-page="dashboard" onclick="navigateTo('dashboard')">
+          <span class="nav-icon">◈</span><span>Dashboard</span>
+        </button>
+        <button class="nav-item" data-page="clientes" onclick="navigateTo('clientes')">
+          <span class="nav-icon">♛</span><span>Clientes</span>
+        </button>
+        <button class="nav-item" data-page="pontos" onclick="navigateTo('pontos')">
+          <span class="nav-icon">◉</span><span>Lançar Pontos</span>
+        </button>
+        <button class="nav-item" data-page="colaboradores" onclick="navigateTo('colaboradores')">
+          <span class="nav-icon">◆</span><span>Colaboradores</span>
+        </button>
+        <button class="nav-item" data-page="metas" onclick="navigateTo('metas')">
+          <span class="nav-icon">◎</span><span>Metas</span>
+        </button>
+        <button class="nav-item" data-page="calendario" onclick="navigateTo('calendario')">
+          <span class="nav-icon">◇</span><span>Calendário</span>
+        </button>
+        <button class="nav-item" data-page="mensagens" onclick="navigateTo('mensagens')">
+          <span class="nav-icon">✉</span><span>Mensagens</span>
+        </button>
+        <button class="nav-item" data-page="configuracoes" onclick="navigateTo('configuracoes')">
+          <span class="nav-icon">⚙</span><span>Configurações</span>
+        </button>
+      </nav>
+      <div class="sidebar-footer">
+        <button class="btn-icon-sm" onclick="toggleSidebar()" title="Recolher menu">◁</button>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+          <h1 class="page-title" id="page-title">Dashboard</h1>
+        </div>
+        <div class="topbar-right">
+          <span class="topbar-date" id="topbar-date"></span>
+          <!-- Logo no topbar (aparece quando upload feito) -->
+          <div id="topbar-logo" style="display:flex;align-items:center"></div>
+          <!-- Logged-in user + logout -->
+          <div style="display:flex;align-items:center;gap:8px;border-left:1px solid rgba(212,175,55,0.15);padding-left:12px;margin-left:4px">
+            <span id="topbar-username" style="font-size:.8rem;color:var(--text-secondary);font-weight:600"></span>
+            <button class="btn btn-ghost btn-sm" onclick="doLogout()" title="Sair"
+              style="color:var(--rose);border-color:rgba(201,116,138,0.3);font-size:.78rem;padding:5px 10px">
+              ⎋ Sair
+            </button>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="navigateTo('configuracoes')" title="Configurações">
+            ⚙
+          </button>
+        </div>
+      </header>
+
+      <!-- PAGE VIEWS -->
+      <div class="page-container">
+        <div id="page-dashboard" class="page active"></div>
+        <div id="page-clientes" class="page"></div>
+        <div id="page-pontos" class="page"></div>
+        <div id="page-colaboradores" class="page"></div>
+        <div id="page-metas" class="page"></div>
+        <div id="page-calendario" class="page"></div>
+        <div id="page-mensagens" class="page"></div>
+        <div id="page-configuracoes" class="page"></div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/pages/dashboard.js"></script>
+  <script src="js/pages/clientes.js"></script>
+  <script src="js/pages/pontos.js"></script>
+  <script src="js/pages/colaboradores.js"></script>
+  <script src="js/pages/metas.js"></script>
+  <script src="js/pages/calendario.js"></script>
+  <script src="js/pages/mensagens.js"></script>
+  <script src="js/pages/configuracoes.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

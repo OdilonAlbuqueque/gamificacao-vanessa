@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Meu Perfil – Vanessa Amorim</title>
+  <meta name="description" content="Acesse seus pontos, extrato e pesquisa de satisfação" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --gold: #D4AF37; --gold-light: #F0D060; --gold-dark: #A8892A;
+      --gold-glow: rgba(212,175,55,0.25);
+      --bg: #0A0A0A; --surface: #161616; --surface2: #1E1E1E; --surface3: #242424;
+      --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.15);
+      --text-primary: #F5F5F5; --text-secondary: #B0B0B0; --text-muted: #707070;
+      --teal: #4ECDC4; --rose: #E07070; --green: #3DD68C; --purple: #9B59B6;
+      --radius: 14px; --radius-sm: 8px;
+    }
+    html, body { height: 100%; background: var(--bg); color: var(--text-primary);
+      font-family: 'Outfit', sans-serif; font-size: 16px; -webkit-font-smoothing: antialiased; }
+
+    /* ── LOADING ── */
+    #cl-loading { position: fixed; inset: 0; display: flex; align-items: center;
+      justify-content: center; background: var(--bg); z-index: 100; }
+    .spinner { width: 40px; height: 40px; border: 3px solid var(--border);
+      border-top-color: var(--gold); border-radius: 50%; animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── LOGIN ── */
+    #cl-login { min-height: 100vh; display: flex; align-items: center;
+      justify-content: center; padding: 24px; }
+    .login-card { width: 100%; max-width: 400px; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 20px; padding: 40px 32px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+    .login-logo { text-align: center; margin-bottom: 32px; }
+    .login-logo-icon { width: 72px; height: 72px; background: linear-gradient(135deg, var(--gold-dark), var(--gold));
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 2rem; margin: 0 auto 16px; box-shadow: 0 8px 32px var(--gold-glow); }
+    .login-logo h1 { font-size: 1.4rem; font-weight: 700; color: var(--gold); }
+    .login-logo p { font-size: .85rem; color: var(--text-muted); margin-top: 4px; }
+    .login-subtitle { font-size: .9rem; color: var(--text-secondary); text-align: center;
+      margin-bottom: 28px; line-height: 1.5; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: .78rem; font-weight: 600; color: var(--text-secondary);
+      text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
+    .form-group input { width: 100%; background: var(--surface2); border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm); padding: 12px 16px; color: var(--text-primary);
+      font-family: inherit; font-size: .95rem; outline: none; transition: border-color .2s; }
+    .form-group input:focus { border-color: var(--gold); }
+    .btn-login { width: 100%; background: linear-gradient(135deg, var(--gold-dark), var(--gold));
+      color: #000; border: none; border-radius: var(--radius-sm); padding: 14px;
+      font-family: inherit; font-size: 1rem; font-weight: 700; cursor: pointer;
+      letter-spacing: .04em; margin-top: 8px; transition: transform .15s, box-shadow .15s; }
+    .btn-login:hover { transform: translateY(-1px); box-shadow: 0 6px 20px var(--gold-glow); }
+    .btn-login:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+    .login-error { color: var(--rose); font-size: .82rem; text-align: center;
+      margin-top: 12px; display: none; }
+    .login-hint { text-align: center; font-size: .75rem; color: var(--text-muted); margin-top: 16px; }
+
+    /* ── DASHBOARD ── */
+    #cl-app { max-width: 520px; margin: 0 auto; padding: 0 0 80px; min-height: 100vh; }
+    .cl-header { background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 10; }
+    .cl-header-brand { display: flex; align-items: center; gap: 10px; }
+    .cl-brand-icon { width: 34px; height: 34px; background: linear-gradient(135deg, var(--gold-dark), var(--gold));
+      border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .9rem; }
+    .cl-brand-name { font-size: .75rem; color: var(--text-muted); }
+    .cl-client-name { font-size: .95rem; font-weight: 700; color: var(--text-primary); }
+    .btn-logout { background: none; border: 1px solid var(--border); color: var(--text-muted);
+      border-radius: 20px; padding: 6px 14px; font-size: .75rem; cursor: pointer;
+      font-family: inherit; transition: all .2s; }
+    .btn-logout:hover { border-color: var(--rose); color: var(--rose); }
+
+    .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 20px 16px 8px; }
+    .kpi-card { background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px; text-align: center; }
+    .kpi-card.gold { border-color: var(--gold); background: rgba(212,175,55,.06); }
+    .kpi-value { font-size: 1.8rem; font-weight: 800; line-height: 1; margin-bottom: 4px; }
+    .kpi-label { font-size: .72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; }
+
+    .tab-bar { display: flex; gap: 0; padding: 12px 16px 0; }
+    .tab-btn { flex: 1; background: none; border: none; border-bottom: 2px solid var(--border);
+      color: var(--text-muted); font-family: inherit; font-size: .82rem; font-weight: 600;
+      padding: 10px 4px; cursor: pointer; transition: all .2s; }
+    .tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+    .tab-panel { padding: 16px; display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── EXTRATO ── */
+    .tx-item { display: flex; align-items: center; gap: 12px; padding: 12px 0;
+      border-bottom: 1px solid var(--border); }
+    .tx-icon { width: 36px; height: 36px; border-radius: 50%; display: flex;
+      align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+    .tx-earned  { background: rgba(61,214,140,.15); }
+    .tx-redeemed{ background: rgba(224,112,112,.15); }
+    .tx-expired { background: rgba(112,112,112,.12); }
+    .tx-info { flex: 1; min-width: 0; }
+    .tx-desc { font-size: .88rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tx-date { font-size: .72rem; color: var(--text-muted); margin-top: 2px; }
+    .tx-pts { font-weight: 700; font-size: .95rem; flex-shrink: 0; }
+    .tx-pts.pos { color: var(--green); }
+    .tx-pts.neg { color: var(--rose); }
+    .tx-pts.exp { color: var(--text-muted); }
+
+    /* ── RANKING ── */
+    .rank-me { background: rgba(212,175,55,.08); border: 1px solid var(--gold);
+      border-radius: var(--radius); padding: 16px; text-align: center; margin-bottom: 20px; }
+    .rank-me-pos { font-size: 2.5rem; font-weight: 800; color: var(--gold); }
+    .rank-me-label { font-size: .82rem; color: var(--text-secondary); }
+    .rank-item { display: flex; align-items: center; gap: 12px; padding: 10px 0;
+      border-bottom: 1px solid var(--border); }
+    .rank-num { width: 28px; font-weight: 700; color: var(--text-muted); font-size: .9rem; flex-shrink:0; }
+    .rank-num.gold-text { color: #FFD700; }
+    .rank-num.silver   { color: #C0C0C0; }
+    .rank-num.bronze   { color: #CD7F32; }
+    .rank-anon { flex: 1; font-size: .88rem; color: var(--text-secondary); }
+    .rank-anon.is-me { font-weight: 700; color: var(--gold); }
+    .rank-pts { font-weight: 700; font-size: .9rem; }
+
+    /* ── NPS ── */
+    .nps-card { background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 24px; }
+    .nps-progress { display: flex; gap: 4px; margin-bottom: 24px; }
+    .nps-progress-dot { flex: 1; height: 4px; border-radius: 2px;
+      background: var(--border); transition: background .3s; }
+    .nps-progress-dot.done { background: var(--gold); }
+    .nps-question { font-size: 1rem; font-weight: 600; line-height: 1.5;
+      margin-bottom: 20px; color: var(--text-primary); }
+    /* NPS Score 0-10 */
+    .nps-score-grid { display: grid; grid-template-columns: repeat(11, 1fr); gap: 4px; }
+    .nps-score-btn { border: 1.5px solid var(--border); background: var(--surface2);
+      color: var(--text-primary); border-radius: 6px; padding: 8px 2px;
+      font-family: inherit; font-size: .85rem; font-weight: 700; cursor: pointer;
+      transition: all .15s; }
+    .nps-score-btn.sel { background: var(--gold); border-color: var(--gold); color: #000; }
+    .nps-score-labels { display: flex; justify-content: space-between;
+      font-size: .72rem; color: var(--text-muted); margin-top: 6px; }
+    /* Stars */
+    .nps-stars { display: flex; gap: 8px; font-size: 2rem; margin: 4px 0; }
+    .nps-star { cursor: pointer; transition: transform .1s; user-select: none; }
+    .nps-star:hover { transform: scale(1.2); }
+    .nps-star.lit { filter: none; }
+    .nps-star.dim { filter: grayscale(1) opacity(.4); }
+    /* Emoji options */
+    .nps-emoji-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .nps-emoji-btn { flex: 1; min-width: 60px; background: var(--surface2);
+      border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+      padding: 12px 8px; text-align: center; cursor: pointer;
+      font-size: 1.6rem; transition: all .15s; }
+    .nps-emoji-btn .nps-emoji-label { font-size: .7rem; color: var(--text-muted); display: block; margin-top: 4px; }
+    .nps-emoji-btn.sel { border-color: var(--gold); background: rgba(212,175,55,.1); }
+    /* Yes/No */
+    .nps-yn-row { display: flex; gap: 12px; }
+    .nps-yn-btn { flex: 1; padding: 14px; border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm); background: var(--surface2);
+      font-family: inherit; font-size: 1rem; font-weight: 600;
+      cursor: pointer; transition: all .15s; color: var(--text-primary); }
+    .nps-yn-btn.yes.sel { border-color: var(--green); background: rgba(61,214,140,.1); color: var(--green); }
+    .nps-yn-btn.no.sel  { border-color: var(--rose);  background: rgba(224,112,112,.1); color: var(--rose); }
+    /* Comment */
+    .nps-textarea { width: 100%; background: var(--surface2); border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm); padding: 12px; color: var(--text-primary);
+      font-family: inherit; font-size: .9rem; resize: vertical; outline: none;
+      min-height: 90px; transition: border-color .2s; }
+    .nps-textarea:focus { border-color: var(--gold); }
+    /* Audio */
+    .audio-section { margin-top: 14px; }
+    .btn-record { display: flex; align-items: center; gap: 8px; background: var(--surface2);
+      border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 10px 16px;
+      color: var(--text-secondary); font-family: inherit; font-size: .88rem; cursor: pointer;
+      transition: all .2s; }
+    .btn-record.recording { border-color: var(--rose); color: var(--rose); animation: pulse-rec .8s ease-in-out infinite; }
+    .btn-record.done { border-color: var(--green); color: var(--green); }
+    @keyframes pulse-rec { 0%,100%{ opacity:1; } 50%{ opacity:.5; } }
+    .audio-playback { margin-top: 8px; width: 100%; border-radius: var(--radius-sm); }
+
+    /* NAV BUTTONS */
+    .nps-nav { display: flex; gap: 10px; margin-top: 24px; }
+    .btn-nps-next { flex: 1; background: linear-gradient(135deg, var(--gold-dark), var(--gold));
+      color: #000; border: none; border-radius: var(--radius-sm); padding: 13px;
+      font-family: inherit; font-size: .95rem; font-weight: 700; cursor: pointer;
+      transition: transform .1s; }
+    .btn-nps-next:hover { transform: translateY(-1px); }
+    .btn-nps-next:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+    .btn-nps-back { background: none; border: 1px solid var(--border); color: var(--text-muted);
+      border-radius: var(--radius-sm); padding: 13px 18px; font-family: inherit;
+      font-size: .95rem; cursor: pointer; }
+
+    /* Success */
+    .nps-success { text-align: center; padding: 40px 20px; }
+    .nps-success-icon { font-size: 4rem; margin-bottom: 16px; }
+    .nps-success h2 { font-size: 1.4rem; font-weight: 700; color: var(--gold); margin-bottom: 8px; }
+    .nps-success p { color: var(--text-secondary); font-size: .9rem; line-height: 1.6; }
+    .nps-cooldown { text-align: center; padding: 32px 20px; }
+    .nps-cooldown-icon { font-size: 3rem; margin-bottom: 12px; }
+    .nps-cooldown h3 { font-size: 1.1rem; color: var(--text-primary); margin-bottom: 8px; }
+    .nps-cooldown p { color: var(--text-muted); font-size: .85rem; }
+
+    .hidden { display: none !important; }
+    .empty-msg { text-align: center; color: var(--text-muted); font-size: .85rem;
+      padding: 32px 16px; }
+    .section-title { font-size: .72rem; font-weight: 700; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: .1em; margin-bottom: 12px; }
+    .badge-pts { display: inline-block; background: rgba(212,175,55,.15); color: var(--gold);
+      border: 1px solid rgba(212,175,55,.3); border-radius: 20px; padding: 2px 10px;
+      font-size: .78rem; font-weight: 700; }
+  </style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="cl-loading"><div class="spinner"></div></div>
+
+<!-- LOGIN -->
+<div id="cl-login" class="hidden">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-icon" id="cl-logo-icon">✦</div>
+      <h1 id="cl-clinic-name">Vanessa Amorim</h1>
+      <p>Clínica de Estética Facial & Corporal</p>
+    </div>
+    <p class="login-subtitle">Acesse seu perfil de pontos e pesquisa de satisfação.</p>
+    <div class="form-group">
+      <label>Seu CPF</label>
+      <input type="text" id="cl-cpf-input" placeholder="000.000.000-00" maxlength="14" inputmode="numeric" />
+    </div>
+    <div class="form-group">
+      <label>Senha</label>
+      <input type="password" id="cl-pwd-input" placeholder="••••••••" />
+    </div>
+    <button class="btn-login" id="cl-login-btn" onclick="clLogin()">Entrar</button>
+    <p class="login-error" id="cl-error">CPF ou senha incorretos.</p>
+    <p class="login-hint">Sua senha é fornecida pela clínica.</p>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="cl-app" class="hidden">
+  <div class="cl-header">
+    <div class="cl-header-brand">
+      <div class="cl-brand-icon" id="cl-app-logo">✦</div>
+      <div>
+        <div class="cl-brand-name" id="cl-app-clinic">Vanessa Amorim</div>
+        <div class="cl-client-name" id="cl-app-name">–</div>
+      </div>
+    </div>
+    <button class="btn-logout" onclick="clLogout()">Sair</button>
+  </div>
+
+  <!-- KPI CARDS -->
+  <div class="kpi-grid">
+    <div class="kpi-card gold">
+      <div class="kpi-value" id="kpi-active" style="color:var(--gold)">–</div>
+      <div class="kpi-label">Pontos Ativos</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-value" id="kpi-earned" style="color:var(--green)">–</div>
+      <div class="kpi-label">Ganhos</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-value" id="kpi-redeemed" style="color:var(--teal)">–</div>
+      <div class="kpi-label">Resgatados</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-value" id="kpi-expired" style="color:var(--text-muted)">–</div>
+      <div class="kpi-label">Expirados</div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tab-btn-extrato"  onclick="clTab('extrato')">📋 Extrato</button>
+    <button class="tab-btn"        id="tab-btn-ranking"  onclick="clTab('ranking')">🏆 Ranking</button>
+    <button class="tab-btn"        id="tab-btn-nps"      onclick="clTab('nps')">⭐ Pesquisa</button>
+  </div>
+
+  <div id="tab-extrato" class="tab-panel active"></div>
+  <div id="tab-ranking" class="tab-panel"></div>
+  <div id="tab-nps"     class="tab-panel"></div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/cliente.js"></script>
+</body>
+</html>
