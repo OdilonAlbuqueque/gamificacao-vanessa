@@ -13,6 +13,11 @@ const VA_CONFIG = {
 
   // Nome da clínica
   clinicName: 'Vanessa Amorim',
+
+  // ▼ Vídeo de apresentação do sistema para clientes
+  // Cole aqui o ID do vídeo do YouTube após publicar
+  // Ex: 'dQw4w9WgXcQ'  (parte final da URL youtube.com/watch?v=XXXX)
+  welcomeVideoId: 'jNQXAC9IVRw',  // ← TESTE — substituir pelo ID real quando publicado
 };
 
 // Permite sobrescrever localmente via Configurações → Conexão (desenvolvimento)

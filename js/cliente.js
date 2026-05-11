@@ -10,6 +10,52 @@ let _mediaRec    = null;
 let _audioChunks = [];
 let _audioBase64 = null;
 
+// ============================================================
+// VÍDEO DE BOAS-VINDAS
+// ============================================================
+function _videoSkipKey(cpf) {
+  return 'va_skip_video_' + (cpf || '').replace(/\D/g, '');
+}
+
+function abrirVideoModal(cpfRaw) {
+  const videoId = VA_CONFIG.welcomeVideoId;
+  if (!videoId) return; // vídeo ainda não configurado — pula silenciosamente
+
+  const skipKey = _videoSkipKey(cpfRaw);
+  if (localStorage.getItem(skipKey) === '1') return; // usuário marcou "não mostrar"
+
+  // Carrega o iframe com autoplay + sem vídeos relacionados + sem barra do YouTube
+  const iframe = document.getElementById('video-iframe');
+  if (iframe) {
+    iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&color=white`;
+  }
+
+  // Reseta o checkbox
+  const chk = document.getElementById('vmod-nao-mostrar');
+  if (chk) chk.checked = false;
+
+  const overlay = document.getElementById('video-modal-overlay');
+  overlay.dataset.cpf = cpfRaw;
+  requestAnimationFrame(() => overlay.classList.add('visible'));
+}
+
+window.fecharVideoModal = function() {
+  const overlay = document.getElementById('video-modal-overlay');
+  const chk = document.getElementById('vmod-nao-mostrar');
+  const cpfRaw = overlay.dataset.cpf || '';
+
+  // Salva preferência se checkbox marcado
+  if (chk && chk.checked && cpfRaw) {
+    localStorage.setItem(_videoSkipKey(cpfRaw), '1');
+  }
+
+  // Para o vídeo limpando o src (evita áudio continuando em background)
+  const iframe = document.getElementById('video-iframe');
+  if (iframe) iframe.src = '';
+
+  overlay.classList.remove('visible');
+};
+
 const _NPS_STEPS_DEFAULT = [
   { id: 'score',       type: 'nps_score', required: true,  q: 'De 0 a 10, como você avalia sua experiência na Clínica Vanessa Amorim?' },
   { id: 'team',        type: 'stars',     required: true,  q: 'Como você avalia o atendimento da nossa equipe?' },
@@ -141,6 +187,8 @@ window.clLogin = async function() {
     hide('cl-login');
     show('cl-app');
     await loadDashboard();
+    // Exibe vídeo de apresentação (se não foi dispensado antes)
+    abrirVideoModal(cpfRaw);
   } catch(e) {
     showErr('Erro ao acessar. Tente novamente.');
     btn.textContent = 'Entrar'; btn.disabled = false;

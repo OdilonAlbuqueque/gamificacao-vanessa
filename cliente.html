@@ -209,12 +209,135 @@
     .badge-pts { display: inline-block; background: rgba(212,175,55,.15); color: var(--gold);
       border: 1px solid rgba(212,175,55,.3); border-radius: 20px; padding: 2px 10px;
       font-size: .78rem; font-weight: 700; }
+
+    /* ── VIDEO WELCOME MODAL ── */
+    #video-modal-overlay {
+      position: fixed; inset: 0; z-index: 9999;
+      background: rgba(0,0,0,.92);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 20px;
+      opacity: 0; pointer-events: none;
+      transition: opacity .35s ease;
+      backdrop-filter: blur(8px);
+    }
+    #video-modal-overlay.visible {
+      opacity: 1; pointer-events: all;
+    }
+    .vmod-inner {
+      width: 100%; max-width: 860px;
+      animation: vmodIn .4s ease both;
+    }
+    @keyframes vmodIn {
+      from { transform: translateY(24px) scale(.97); opacity: 0; }
+      to   { transform: translateY(0)   scale(1);    opacity: 1; }
+    }
+    .vmod-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .vmod-title {
+      font-size: 1.1rem; font-weight: 700; color: var(--gold);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .vmod-title span { font-size: 1.3rem; }
+    .vmod-close {
+      background: rgba(255,255,255,.06); border: 1px solid var(--border-strong);
+      color: var(--text-secondary); border-radius: 8px;
+      width: 36px; height: 36px; font-size: 1.1rem;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all .2s;
+    }
+    .vmod-close:hover { background: rgba(255,255,255,.12); color: var(--text-primary); }
+    .vmod-video-wrap {
+      position: relative; width: 100%; padding-bottom: 56.25%; /* 16:9 */
+      border-radius: 14px; overflow: hidden;
+      box-shadow: 0 24px 80px rgba(0,0,0,.7), 0 0 0 1px var(--border-strong);
+      background: #000;
+    }
+    .vmod-video-wrap iframe {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%; border: none;
+    }
+    .vmod-footer {
+      margin-top: 18px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 12px;
+    }
+    .vmod-check-label {
+      display: flex; align-items: center; gap: 10px;
+      cursor: pointer; user-select: none;
+      font-size: .88rem; color: var(--text-secondary);
+      transition: color .2s;
+    }
+    .vmod-check-label:hover { color: var(--text-primary); }
+    .vmod-check {
+      width: 18px; height: 18px; border-radius: 5px;
+      border: 1.5px solid var(--border-strong);
+      background: var(--surface2);
+      appearance: none; -webkit-appearance: none;
+      cursor: pointer; flex-shrink: 0;
+      position: relative; transition: all .2s;
+    }
+    .vmod-check:checked {
+      background: var(--gold); border-color: var(--gold);
+    }
+    .vmod-check:checked::after {
+      content: '✓';
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      color: #000; font-size: .8rem; font-weight: 900;
+      line-height: 18px; text-align: center;
+    }
+    .vmod-btn-skip {
+      background: rgba(212,175,55,.12);
+      border: 1px solid rgba(212,175,55,.3);
+      color: var(--gold);
+      border-radius: 8px; padding: 10px 22px;
+      font-family: inherit; font-size: .9rem; font-weight: 600;
+      cursor: pointer; transition: all .2s;
+    }
+    .vmod-btn-skip:hover {
+      background: rgba(212,175,55,.22);
+      box-shadow: 0 4px 16px rgba(212,175,55,.2);
+    }
   </style>
 </head>
 <body>
 
 <!-- LOADING -->
 <div id="cl-loading"><div class="spinner"></div></div>
+
+<!-- WELCOME VIDEO MODAL -->
+<div id="video-modal-overlay">
+  <div class="vmod-inner">
+    <div class="vmod-header">
+      <div class="vmod-title">
+        <span>🎥</span> Bem-vinda ao seu Painel de Pontos
+      </div>
+      <button class="vmod-close" onclick="fecharVideoModal()" title="Fechar">×</button>
+    </div>
+    <div class="vmod-video-wrap">
+      <iframe
+        id="video-iframe"
+        src=""
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowfullscreen
+        loading="lazy"
+        title="Apresentação do Sistema de Pontos"
+      ></iframe>
+    </div>
+    <div class="vmod-footer">
+      <label class="vmod-check-label">
+        <input type="checkbox" class="vmod-check" id="vmod-nao-mostrar">
+        Não mostrar esta apresentação novamente
+      </label>
+      <button class="vmod-btn-skip" onclick="fecharVideoModal()">
+        Ir para meus pontos →
+      </button>
+    </div>
+  </div>
+</div>
 
 <!-- LOGIN -->
 <div id="cl-login" class="hidden">
